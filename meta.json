@@ -1,0 +1,13 @@
+{
+  "module_id": "viam-labs:moondream-vision",
+  "visibility": "public",
+  "url": "https://github.com/viam-labs/moondream-vision",
+  "description": "This vision model leverages the Moondream tiny vision language model (https://github.com/vikhyat/moondream) running locally to allow for image classification and querying.",
+  "models": [
+    {
+      "api": "rdk:service:vision",
+      "model": "viam-labs:vision:moondream"
+    }
+  ],
+  "entrypoint": "run.sh"
+}

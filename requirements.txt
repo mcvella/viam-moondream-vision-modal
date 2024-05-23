@@ -1,0 +1,3 @@
+viam-sdk
+modal
+pillow
