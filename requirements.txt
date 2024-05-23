@@ -1,3 +1,2 @@
 viam-sdk
-modal
 pillow
