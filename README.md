@@ -1,14 +1,27 @@
 # moondream modular vision service
 
-This module implements the [rdk vision API](https://github.com/rdk/vision-api) in a viam-labs:vision:moondream model.
+This module implements the [rdk vision API](https://github.com/rdk/vision-api) in a viam-labs:vision:moondream-modal model.
 
-This model leverages the [Moondream tiny vision language model](https://github.com/vikhyat/moondream) to allow for image classification and querying.
-
-The Moondream model and inference will run locally, and therefore speed of inference is highly dependant on hardware.
+This model leverages the [Moondream tiny vision language model](https://github.com/vikhyat/moondream) to allow for image classification and querying - with inference running on the [Modal platform](https://modal.com/), allowing you to augment your Viam machines with serverless cloud-based VLM capabilities.
 
 ## Build and Run
 
 To use this module, follow these instructions to [add a module from the Viam Registry](https://docs.viam.com/registry/configure/#add-a-modular-resource-from-the-viam-registry) and select the `viam-labs:vision:moondream` model from the [viam-labs moondream-vision module](https://app.viam.com/module/viam-labs/moondream-vision).
+
+You will also need to sign up for a Modal account, create a workspace, and then create an API token.
+The Modal API token ID and secret must then be used in your module configuration.
+
+## Configure Modal API Token
+
+In the Viam app, you will need to configure access to your Modal account by setting environment variables for this module.
+To do so, in CONFIGURE, click on JSON, and within the service configuration for this module, add:
+
+```json
+      "env": {
+        "MODAL_TOKEN_ID": "YOURTOKENHERE",
+        "MODAL_TOKEN_SECRET": "YOURSECRETHERE"
+      }
+```
 
 ## Configure your vision service
 
@@ -24,7 +37,6 @@ On the new service panel, copy and paste the following attribute template into y
 
 ```json
 {
-  "revision": "<optional model revision>"
 }
 ```
 
@@ -37,13 +49,12 @@ The following attributes are available for `viam-labs:vision:yolov8` model:
 
 | Name | Type | Inclusion | Description |
 | ---- | ---- | --------- | ----------- |
-| `revision` | string | **Required** |  Moondream model revision, defaults to "2024-03-06" |
+|  |  |  |  |
 
 ### Example Configurations
 
 ```json
 {
-  "revision": "2024-03-06"
 }
 ```
 
