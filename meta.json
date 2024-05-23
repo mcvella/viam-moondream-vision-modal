@@ -1,12 +1,12 @@
 {
-  "module_id": "viam-labs:moondream-vision",
+  "module_id": "mcvella:moondream-vision-modal",
   "visibility": "public",
-  "url": "https://github.com/viam-labs/moondream-vision",
-  "description": "This vision model leverages the Moondream tiny vision language model (https://github.com/vikhyat/moondream) running locally to allow for image classification and querying.",
+  "url": "https://github.com/mcvella/viam-moondream-vision-modal",
+  "description": "This vision model leverages the Moondream tiny vision language model (https://github.com/vikhyat/moondream) running on the modal.com platform (https://modal.com/) to allow for image classification and querying.",
   "models": [
     {
       "api": "rdk:service:vision",
-      "model": "viam-labs:vision:moondream"
+      "model": "mcvella:vision:moondream-modal"
     }
   ],
   "entrypoint": "run.sh"
