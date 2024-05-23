@@ -1,5 +1,5 @@
 import modal
-from modal import App, Image
+from modal import Image
 from pathlib import Path
 from PIL import Image
 import base64

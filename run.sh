@@ -8,7 +8,7 @@ if [ -f .installed ]
     python3 -m pip install --user virtualenv --break-system-packages
     python3 -m venv viam-env
     source viam-env/bin/activate
-    pip3 install --upgrade -r requirements.txt
+    pip3 install --no-cache --upgrade -r requirements.txt
     modal deploy modal_setup.py
     if [ $? -eq 0 ]
       then
