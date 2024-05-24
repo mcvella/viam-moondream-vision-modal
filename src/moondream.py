@@ -21,7 +21,7 @@ from viam.resource.types import Model, ModelFamily
 from viam.services.vision import Vision
 from viam.components.camera import Camera
 from viam.logging import getLogger
-
+from viam.media.utils.pil import viam_to_pil_image
 import modal
 from PIL import Image
 
@@ -83,7 +83,7 @@ class moondream(Vision, Reconfigurable):
         actual_cam = self.DEPS[Camera.get_resource_name(camera_name)]
         cam = cast(Camera, actual_cam)
         cam_image = await cam.get_image(mime_type="image/jpeg")
-        return await self.get_classifications(cam_image, count, extra=extra)
+        return await self.get_classifications(viam_to_pil_image(cam_image), count, extra=extra)
 
     
     async def get_classifications(
