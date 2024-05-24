@@ -64,7 +64,7 @@ class moondream(Vision, Reconfigurable):
         actual_cam = self.DEPS[Camera.get_resource_name(camera_name)]
         cam = cast(Camera, actual_cam)
         cam_image = await cam.get_image(mime_type="image/jpeg")
-        return viam_to_pil_image(cam_image)
+        return cam_image
     
     # not implemented, use classification methods
     async def get_detections_from_camera(
