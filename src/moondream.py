@@ -13,13 +13,13 @@ from viam.utils import ValueTypes
 
 from viam.module.types import Reconfigurable
 from viam.proto.app.robot import ComponentConfig
-from viam.proto.common import ResourceName, Vector3
+from viam.proto.common import ResourceName
 from viam.resource.base import ResourceBase
 from viam.resource.types import Model, ModelFamily
 
 from viam.services.vision import Vision, CaptureAllResult
 from viam.proto.service.vision import GetPropertiesResponse
-from viam.components.camera import Camera
+from viam.components.camera import Camera, ViamImage
 from viam.logging import getLogger
 from viam.media.utils.pil import viam_to_pil_image
 
@@ -95,7 +95,7 @@ class moondream(Vision, Reconfigurable):
     
     async def get_classifications(
         self,
-        image: Image.Image,
+        image: ViamImage,
         count: int,
         *,
         extra: Optional[Mapping[str, Any]] = None,
@@ -105,7 +105,7 @@ class moondream(Vision, Reconfigurable):
         question = "describe this image"
         if extra != None and extra.get('question') != None:
             question = extra['question']
-        result = self.model.completion.remote(image, question)
+        result = self.model.completion.remote(viam_to_pil_image(image), question)
         classifications.append({"class_name": result, "confidence": 1})
         return classifications
 
