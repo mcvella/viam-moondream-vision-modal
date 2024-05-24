@@ -5,7 +5,6 @@ from typing import Any, Final, List, Mapping, Optional, Union
 
 from PIL import Image
 
-from viam.media.video import RawImage
 from viam.proto.common import PointCloudObject
 from viam.proto.service.vision import Classification, Detection
 from viam.resource.types import RESOURCE_NAMESPACE_RDK, RESOURCE_TYPE_SERVICE, Subtype
@@ -65,7 +64,7 @@ class moondream(Vision, Reconfigurable):
      # not implemented, use classification methods
     async def get_detections(
         self,
-        image: Union[Image.Image, RawImage],
+        image: Image.Image,
         *,
         extra: Optional[Mapping[str, Any]] = None,
         timeout: Optional[float] = None,
@@ -88,7 +87,7 @@ class moondream(Vision, Reconfigurable):
     
     async def get_classifications(
         self,
-        image: Union[Image.Image, RawImage],
+        image: Image.Image,
         count: int,
         *,
         extra: Optional[Mapping[str, Any]] = None,
