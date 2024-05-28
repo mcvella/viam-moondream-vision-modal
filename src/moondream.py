@@ -60,7 +60,7 @@ class moondream(Vision, Reconfigurable):
     async def get_cam_image(
         self,
         camera_name: str
-    ) -> Image:
+    ) -> ViamImage:
         actual_cam = self.DEPS[Camera.get_resource_name(camera_name)]
         cam = cast(Camera, actual_cam)
         cam_image = await cam.get_image(mime_type="image/jpeg")
