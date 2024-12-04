@@ -8,7 +8,7 @@ import io
 image = modal.Image.from_registry(
     "nvidia/cuda:12.2.0-devel-ubuntu22.04", add_python="3.12"
 ).apt_install(
-    'pip', 'wget'
+    'pip', 'wget', 'clang'
 ).pip_install(
  "pillow"
 ).run_commands([
