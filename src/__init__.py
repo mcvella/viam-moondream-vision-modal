@@ -7,4 +7,4 @@ from viam.resource.registry import Registry, ResourceCreatorRegistration
 
 from .moondream import moondream
 
-Registry.register_resource_creator(Vision.SUBTYPE, moondream.MODEL, ResourceCreatorRegistration(moondream.new, moondream.validate))
+Registry.register_resource_creator(Vision.API, moondream.MODEL, ResourceCreatorRegistration(moondream.new, moondream.validate))

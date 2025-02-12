@@ -7,7 +7,7 @@ from PIL import Image
 
 from viam.proto.common import PointCloudObject
 from viam.proto.service.vision import Classification, Detection
-from viam.resource.types import RESOURCE_NAMESPACE_RDK, RESOURCE_TYPE_SERVICE, Subtype
+from viam.resource.types import RESOURCE_NAMESPACE_RDK, RESOURCE_TYPE_SERVICE
 from viam.utils import ValueTypes
 
 
@@ -38,6 +38,7 @@ class moondream(Vision, Reconfigurable):
     MODEL: ClassVar[Model] = Model(ModelFamily("mcvella", "vision"), "moondream-modal")
     
     model: None
+    gaze_detection: bool = False
 
     # Constructor
     @classmethod
@@ -55,6 +56,11 @@ class moondream(Vision, Reconfigurable):
     def reconfigure(self, config: ComponentConfig, dependencies: Mapping[ResourceName, ResourceBase]):
         self.DEPS = dependencies
         self.model = modal.Cls.lookup("moondream", "Moondream")
+
+        self.gaze_detection = config.attributes.fields["gaze_detection"].bool_value or False
+        self.default_class = config.attributes.fields["default_class"].string_value or "person"
+        self.default_question = config.attributes.fields["default_question"].string_value or "describe this image"
+
         return
         
     async def get_cam_image(
@@ -66,13 +72,12 @@ class moondream(Vision, Reconfigurable):
         cam_image = await cam.get_image(mime_type="image/jpeg")
         return cam_image
     
-    # not implemented, use classification methods
     async def get_detections_from_camera(
         self, camera_name: str, *, extra: Optional[Mapping[str, Any]] = None, timeout: Optional[float] = None
     ) -> List[Detection]:
-        return
-
-     # not implemented, use classification methods
+        cam_image = await self.get_cam_image(camera_name)
+        return await self.get_detections(cam_image, extra=extra)
+    
     async def get_detections(
         self,
         image: Image.Image,
@@ -80,8 +85,38 @@ class moondream(Vision, Reconfigurable):
         extra: Optional[Mapping[str, Any]] = None,
         timeout: Optional[float] = None,
     ) -> List[Detection]:
-        return 
-    
+        detections = []
+        type = self.default_class
+        gaze = self.gaze_detection
+        if extra != None and extra.get('class') != None:
+            type = extra['class']
+        if extra != None and extra.get('gaze') != None:
+            gaze = True
+        im = viam_to_pil_image(image)
+        width, height = im.size
+        if gaze == True:
+            result = self.model().gaze_detection.remote(im)
+        else:
+            result = self.model().detection.remote(im, type)
+
+        for d in result:
+            d["x_min"] = int(d["x_min"] * width)
+            d["y_min"] = int(d["y_min"] * height)
+            if "x_max" in d:
+                d["x_max"] = int(d["x_max"] * width)
+                d["y_max"] = int(d["y_max"] * height)
+            
+            if gaze == True:
+                if not "x_max" in d:
+                    d["x_max"] = d["x_min"] + 1
+                    d["y_max"] = d["y_min"] + 1
+            else:
+                d["class_name"] = type
+                d["confidence"] = 1
+
+            detections.append(d)
+        return detections
+        
     async def get_classifications_from_camera(
         self,
         camera_name: str,
@@ -102,10 +137,10 @@ class moondream(Vision, Reconfigurable):
         timeout: Optional[float] = None,
     ) -> List[Classification]:
         classifications = []
-        question = "describe this image"
+        question = self.default_question
         if extra != None and extra.get('question') != None:
             question = extra['question']
-        result = self.model.completion.remote(viam_to_pil_image(image), question)
+        result = self.model().classification.remote(viam_to_pil_image(image), question)
         classifications.append({"class_name": result, "confidence": 1})
         return classifications
 
@@ -132,6 +167,7 @@ class moondream(Vision, Reconfigurable):
         result = CaptureAllResult()
         result.image = await self.get_cam_image(camera_name)
         result.classifications = await self.get_classifications(result.image, 1)
+        result.detections = await self.get_detections(result.image)
         return result
 
     async def get_properties(
@@ -142,6 +178,6 @@ class moondream(Vision, Reconfigurable):
     ) -> GetPropertiesResponse:
         return GetPropertiesResponse(
             classifications_supported=True,
-            detections_supported=False,
+            detections_supported=True,
             object_point_clouds_supported=False
         )
