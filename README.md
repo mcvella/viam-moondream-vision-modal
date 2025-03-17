@@ -110,4 +110,4 @@ To use Moondream's "gaze detection" capabilities, either set *gaze_detection* to
 moondream.get_detections(image, extra={"gaze_detection": true})
 ```
 
-If *gaze_detection* is activated, you detections will be returned with classes of *face_<counter>* and *gaze_<counter>*, where counter attempts to match a face with where that face is gazing.
+If *gaze_detection* is activated, you detections will be returned with classes of face_*counter* and gaze_*counter*, where counter attempts to match a face with where that face is gazing.
