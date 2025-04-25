@@ -19,16 +19,19 @@ To do so, in CONFIGURE, click on JSON, and within the service configuration for 
 ```json
       "env": {
         "MODAL_TOKEN_ID": "YOURTOKENHERE",
-        "MODAL_TOKEN_SECRET": "YOURSECRETHERE"
+        "MODAL_TOKEN_SECRET": "YOURSECRETHERE",
+        "MODAL_GPU_TYPE": "L4"
       }
 ```
+
+The `MODAL_GPU_TYPE` environment variable is optional and defaults to "L4" if not specified. You can change this to use different GPU types available on the Modal platform, such as "A10G" or "A100" for more computational power (and higher cost) or "T4" for lower-powered workloads.
 
 ## Configure your vision service
 
 > [!NOTE]  
 > Before configuring your vision service, you must [create a machine](https://docs.viam.com/manage/fleet/machines/#add-a-new-machine).
 
-Navigate to the **Config** tab of your robot’s page in [the Viam app](https://app.viam.com/).
+Navigate to the **Config** tab of your robot's page in [the Viam app](https://app.viam.com/).
 Click on the **Service** subtab and click **Create service**.
 Select the `vision` type, then select the `mcvella:vision:moondream-modal` model.
 Enter a name for your vision service and click **Create**.

@@ -8,6 +8,7 @@ import os
 
 MODEL = "vikhyatk/moondream2"
 MODEL_DIR = "/root/cache"
+GPU_TYPE = os.environ.get("MODAL_GPU_TYPE", "L4")  # Read from env var, default to L4
 
 image = modal.Image.from_registry(
     "nvidia/cuda:12.6.0-devel-ubuntu22.04", add_python="3.12"
@@ -40,7 +41,7 @@ def pil_to_base64(pil_img):
     pil_img.save(buffer, format="PNG")
     return base64.b64encode(buffer.getvalue()).decode('utf-8')
 
-@app.cls(min_containers=0, gpu="L4", image=image, volumes={MODEL_DIR: vol})
+@app.cls(min_containers=0, gpu=GPU_TYPE, image=image, volumes={MODEL_DIR: vol})
 @modal.concurrent(max_inputs=100)
 class Moondream:
     @modal.enter()
@@ -48,6 +49,8 @@ class Moondream:
         from transformers import AutoModelForCausalLM, AutoTokenizer
         from PIL import Image
 
+        print(f"Using GPU type: {GPU_TYPE}")
+        
         self.model = AutoModelForCausalLM.from_pretrained(
             MODEL,
             cache_dir=MODEL_DIR,
@@ -157,6 +160,8 @@ class Moondream:
 @app.local_entrypoint()
 def main(img_path=None, question=None):
     model = Moondream()
+    
+    print(f"Using GPU type: {GPU_TYPE}")
     
     # Default image if none provided
     if not img_path:
