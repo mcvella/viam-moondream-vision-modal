@@ -36,13 +36,6 @@ Click on the **Service** subtab and click **Create service**.
 Select the `vision` type, then select the `mcvella:vision:moondream-modal` model.
 Enter a name for your vision service and click **Create**.
 
-On the new service panel, copy and paste the following attribute template into your vision service's **Attributes** box:
-
-```json
-{
-}
-```
-
 > [!NOTE]  
 > For more information, see [Configure a Robot](https://docs.viam.com/manage/configuration/).
 
@@ -55,13 +48,6 @@ The following attributes are available for `mcvella:vision:moondream-modal` mode
 | default_question | string | optional | For classifications, the default question to ask about the image.  Defaults to "describe this image". |
 | default_class | string | optional | For detections, the default class to detect in the image.  Defaults to "person". |
 | gaze_detection | boolean | optional | If set to true, detections will be gaze detections.  Defaults to false. |
-
-### Example Configurations
-
-```json
-{
-}
-```
 
 ## API
 
