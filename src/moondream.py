@@ -25,8 +25,19 @@ from viam.media.utils.pil import viam_to_pil_image
 
 import modal
 from PIL import Image
+import io
+import base64
 
 LOGGER = getLogger(__name__)
+
+def pil_to_base64(pil_img):
+    """Convert PIL Image to base64 string"""
+    # Make sure it's RGB
+    if pil_img.mode != "RGB":
+        pil_img = pil_img.convert("RGB")
+    buffer = io.BytesIO()
+    pil_img.save(buffer, format="PNG")
+    return base64.b64encode(buffer.getvalue()).decode('utf-8')
 
 class moondream(Vision, Reconfigurable):
     
@@ -55,7 +66,7 @@ class moondream(Vision, Reconfigurable):
     # Handles attribute reconfiguration
     def reconfigure(self, config: ComponentConfig, dependencies: Mapping[ResourceName, ResourceBase]):
         self.DEPS = dependencies
-        self.model = modal.Cls.lookup("moondream", "Moondream")
+        self.model = modal.Cls.from_name("moondream", "Moondream")
 
         self.gaze_detection = config.attributes.fields["gaze_detection"].bool_value or False
         self.default_class = config.attributes.fields["default_class"].string_value or "person"
@@ -80,7 +91,7 @@ class moondream(Vision, Reconfigurable):
     
     async def get_detections(
         self,
-        image: Image.Image,
+        image: ViamImage,
         *,
         extra: Optional[Mapping[str, Any]] = None,
         timeout: Optional[float] = None,
@@ -92,29 +103,41 @@ class moondream(Vision, Reconfigurable):
             type = extra['class']
         if extra != None and extra.get('gaze') != None:
             gaze = True
+        
+        # Convert to PIL image and ensure it's RGB
         im = viam_to_pil_image(image)
+        if im.mode != "RGB":
+            im = im.convert("RGB")
         width, height = im.size
-        if gaze == True:
-            result = self.model().gaze_detection.remote(im)
-        else:
-            result = self.model().detection.remote(im, type)
-
-        for d in result:
-            d["x_min"] = int(d["x_min"] * width)
-            d["y_min"] = int(d["y_min"] * height)
-            if "x_max" in d:
-                d["x_max"] = int(d["x_max"] * width)
-                d["y_max"] = int(d["y_max"] * height)
-            
+        
+        # Convert PIL to base64 string
+        img_b64 = pil_to_base64(im)
+        
+        try:
             if gaze == True:
-                if not "x_max" in d:
-                    d["x_max"] = d["x_min"] + 1
-                    d["y_max"] = d["y_min"] + 1
+                result = self.model().gaze_detection.remote(img_b64)
             else:
-                d["class_name"] = type
-                d["confidence"] = 1
+                result = self.model().detection.remote(img_b64, class_name=type)
 
-            detections.append(d)
+            for d in result:
+                d["x_min"] = int(d["x_min"] * width)
+                d["y_min"] = int(d["y_min"] * height)
+                if "x_max" in d:
+                    d["x_max"] = int(d["x_max"] * width)
+                    d["y_max"] = int(d["y_max"] * height)
+                
+                if gaze == True:
+                    if not "x_max" in d:
+                        d["x_max"] = d["x_min"] + 1
+                        d["y_max"] = d["y_min"] + 1
+                else:
+                    d["class_name"] = type
+                    d["confidence"] = 1
+
+                detections.append(d)
+        except Exception as e:
+            LOGGER.error(f"Error in detection: {e}")
+            
         return detections
         
     async def get_classifications_from_camera(
@@ -140,8 +163,22 @@ class moondream(Vision, Reconfigurable):
         question = self.default_question
         if extra != None and extra.get('question') != None:
             question = extra['question']
-        result = self.model().classification.remote(viam_to_pil_image(image), question)
-        classifications.append({"class_name": result, "confidence": 1})
+        
+        # Convert to PIL image and ensure it's RGB
+        im = viam_to_pil_image(image)
+        if im.mode != "RGB":
+            im = im.convert("RGB")
+        
+        # Convert PIL to base64 string
+        img_b64 = pil_to_base64(im)
+        
+        try:
+            result = self.model().classification.remote(img_b64, question)
+            classifications.append({"class_name": result, "confidence": 1})
+        except Exception as e:
+            LOGGER.error(f"Error in classification: {e}")
+            classifications.append({"class_name": f"Error: {str(e)}", "confidence": 0})
+            
         return classifications
 
     

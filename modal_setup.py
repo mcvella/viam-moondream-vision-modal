@@ -1,5 +1,5 @@
 import modal
-from modal import Image
+#from modal import Image
 from pathlib import Path
 from PIL import Image
 import base64
@@ -26,13 +26,22 @@ app = modal.App("moondream")
 
 vol = modal.Volume.from_name("cache", create_if_missing=True)
 
+def encode_image_to_base64(image_path):
+    """Convert an image file to base64 string"""
+    with open(image_path, "rb") as img_file:
+        return base64.b64encode(img_file.read()).decode('utf-8')
 
-def image_to_base64_data_uri(img):
-    buffered = io.BytesIO()
-    img.save(buffered, format="JPEG")
-    return 'data:image/jpeg;base64,' + base64.b64encode(buffered.getvalue()).decode("utf-8")
-    
-@app.cls(allow_concurrent_inputs=100, keep_warm=0, gpu="L4", image=image, volumes={MODEL_DIR: vol})
+def pil_to_base64(pil_img):
+    """Convert PIL Image to base64 string"""
+    # Make sure it's RGB
+    if pil_img.mode != "RGB":
+        pil_img = pil_img.convert("RGB")
+    buffer = io.BytesIO()
+    pil_img.save(buffer, format="PNG")
+    return base64.b64encode(buffer.getvalue()).decode('utf-8')
+
+@app.cls(min_containers=0, gpu="L4", image=image, volumes={MODEL_DIR: vol})
+@modal.concurrent(max_inputs=100)
 class Moondream:
     @modal.enter()
     def start(self):
@@ -43,34 +52,80 @@ class Moondream:
             MODEL,
             cache_dir=MODEL_DIR,
             trust_remote_code=True,
-            revision="2025-01-09",
+            revision="2025-04-14",
             device_map={"": "cuda"}
         )
 
 
     @modal.method()
-    def classification(self, image: Image = None, question: str = None):
+    def classification(self, base64_image=None, question: str = None):
         import time
+        from PIL import Image
+        import io
+        import base64
+        
         start = time.time()
+        
+        # Create a PIL Image from base64 string
+        img_data = base64.b64decode(base64_image)
+        image = Image.open(io.BytesIO(img_data))
+        
+        # Ensure RGB mode
+        if image.mode != "RGB":
+            image = image.convert("RGB")
+            
+        print(f"Classification: Image size: {image.size}, mode: {image.mode}")
+        
         response = self.model.query(image, question)
         end = time.time()
-        print(end - start)
+        print(f"Classification time: {end - start:.2f}s")
 
         return response["answer"]
     
     @modal.method()
-    def detection(self, image: Image = None, type: str = None):
+    def detection(self, base64_image=None, class_name: str = None):
         import time
+        from PIL import Image
+        import io
+        import base64
+        
         start = time.time()
-        response = self.model.detect(image, type)
+        
+        # Create a PIL Image from base64 string
+        img_data = base64.b64decode(base64_image)
+        image = Image.open(io.BytesIO(img_data))
+        
+        # Ensure RGB mode
+        if image.mode != "RGB":
+            image = image.convert("RGB")
+            
+        print(f"Detection: Image size: {image.size}, mode: {image.mode}")
+        
+        response = self.model.detect(image, class_name)
         end = time.time()
-        print(end - start)
+        print(f"Detection time: {end - start:.2f}s")
+        
         return response["objects"]
     
     @modal.method()
-    def gaze_detection(self, image: Image = None):
+    def gaze_detection(self, base64_image=None):
         import time
+        from PIL import Image
+        import io
+        import base64
+        
         start = time.time()
+        
+        # Create a PIL Image from base64 string
+        img_data = base64.b64decode(base64_image)
+        image = Image.open(io.BytesIO(img_data))
+        
+        # Ensure RGB mode
+        if image.mode != "RGB":
+            image = image.convert("RGB")
+            
+        print(f"Gaze Detection: Image size: {image.size}, mode: {image.mode}")
+        
         detections = []
         response = self.model.detect(image, "face")
         print(response)
@@ -95,14 +150,30 @@ class Moondream:
             detections.append(face)
             face_index = face_index + 1
         end = time.time()
-        print(end - start)
+        print(f"Gaze detection time: {end - start:.2f}s")
+        
         return detections
       
 @app.local_entrypoint()
-def main(img=None, question=None, twice=True):
+def main(img_path=None, question=None):
     model = Moondream()
-    img = Image.open(
-        'cat_on_counter.jpg'
+    
+    # Default image if none provided
+    if not img_path:
+        img_path = 'cat_on_counter.jpg'
+    
+    # Convert image to base64
+    img_b64 = encode_image_to_base64(img_path)
+    
+    # Test classification
+    response = model.classification.remote(
+        img_b64, 
+        question=question or "Is there a cat on a table or countertop? Answer with either yes or no."
     )
-    response = model.classification.remote(img, question="Is there a cat on a table or countertop? Answer with either yes or no.")
-    print(response)
+    print(f"Classification result: {response}")
+    
+    # Test detection
+    objects = model.detection.remote(img_b64, class_name="cat")
+    print(f"Detection result: {objects}")
+    
+    return response
