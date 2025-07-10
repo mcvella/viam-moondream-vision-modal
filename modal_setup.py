@@ -55,7 +55,7 @@ class Moondream:
             MODEL,
             cache_dir=MODEL_DIR,
             trust_remote_code=True,
-            revision="2025-04-14",
+            revision="2025-06-21",
             device_map={"": "cuda"}
         )
 
